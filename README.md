@@ -5,7 +5,7 @@ The ultimate ENS javascript library, with [ethers.js](https://github.com/ethers-
 ## NOTE!!!
 
 ENSjs v3 is currently in the early development stage, meaning that the APIs are subject to change.
-We also use undeployed contracts under the hood, so this **will not** work on any mainnet/testnet where the contracts are not deployed.
+We also use undeployed contracts under the hood, so this **will not** work on any mainnet where the contracts are not deployed. For testnet we currently have a deployment on Goerli
 
 Given the current development status, we're actively seeking feedback so feel free to create an issue or PR if you notice something!
 
