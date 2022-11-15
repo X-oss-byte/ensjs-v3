@@ -6,7 +6,23 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { labelhash } from '../src/utils/labels'
 import { namehash } from '../src/utils/normalise'
 
-const names = [
+type Subnames = {
+  label: string
+  namedOwner: string
+  subnames?: Subnames
+}[]
+
+const names: {
+  label: string
+  namedOwner: string
+  namedAddr: string
+  records?: {
+    text?: { key: string; value: string }[]
+    addr?: { key: number; value: string }[]
+    contenthash?: string
+  }
+  subnames?: Subnames
+}[] = [
   {
     label: 'test123',
     namedOwner: 'owner',
@@ -85,12 +101,56 @@ const names = [
       { label: 'addr', namedOwner: 'owner2' },
     ],
   },
+  {
+    label: 'transfer',
+    namedOwner: 'owner',
+    namedAddr: 'owner',
+    subnames: [
+      {
+        label: 'test',
+        namedOwner: 'owner',
+        subnames: [{ label: 'test', namedOwner: 'owner' }],
+      },
+    ],
+  },
   ...Array.from({ length: 34 }, (_, i) => ({
     label: `${i}-dummy`,
     namedOwner: 'owner2',
     namedAddr: 'owner2',
   })),
 ]
+
+type SubnamesArray = {
+  subnameLabel: string
+  subnameOwner: string
+  parentLabel: string
+  parentOwner: string
+}[]
+
+const recursiveSubnamesToArray = (
+  parentLabel: string,
+  parentOwner: string,
+  subnames: Subnames = [],
+): SubnamesArray => {
+  return subnames.reduce<SubnamesArray>((acc: SubnamesArray, subname) => {
+    const { label, namedOwner, subnames: subSubnames } = subname
+    const subSubnamesArray = recursiveSubnamesToArray(
+      `${label}.${parentLabel}`,
+      namedOwner,
+      subSubnames,
+    )
+    return [
+      ...acc,
+      {
+        subnameLabel: label,
+        subnameOwner: namedOwner,
+        parentOwner,
+        parentLabel,
+      },
+      ...subSubnamesArray,
+    ]
+  }, [])
+}
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { getNamedAccounts, network } = hre
@@ -180,25 +240,27 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       }
     }
 
-    if (subnames) {
-      console.log(`Setting subnames for ${label}.eth...`)
-      const registry = await ethers.getContract('ENSRegistry')
-      for (const {
-        label: subnameLabel,
-        namedOwner: subnameOwner,
-      } of subnames) {
-        const owner = allNamedAccts[subnameOwner]
-        const _registry = registry.connect(await ethers.getSigner(registrant))
-        const setSubnameTx = await _registry.setSubnodeRecord(
-          namehash(`${label}.eth`),
-          labelhash(subnameLabel),
-          owner,
-          resolver,
-          '0',
-        )
-        console.log(` - ${subnameLabel} (tx: ${setSubnameTx.hash})...`)
-        await setSubnameTx.wait()
-      }
+    const subnamesArray = recursiveSubnamesToArray(label, namedOwner, subnames)
+    const registry = await ethers.getContract('ENSRegistry')
+    for (const {
+      subnameLabel,
+      subnameOwner,
+      parentLabel,
+      parentOwner,
+    } of subnamesArray) {
+      const owner = allNamedAccts[subnameOwner]
+      const _registry = registry.connect(
+        await ethers.getSigner(allNamedAccts[parentOwner]),
+      )
+      const setSubnameTx = await _registry.setSubnodeRecord(
+        namehash(`${parentLabel}.eth`),
+        labelhash(subnameLabel),
+        owner,
+        resolver,
+        '0',
+      )
+      console.log(` - ${subnameLabel} (tx: ${setSubnameTx.hash})...`)
+      await setSubnameTx.wait()
     }
   }
 
