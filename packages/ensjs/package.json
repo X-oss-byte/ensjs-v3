@@ -106,7 +106,7 @@
     "@ethersproject/transactions": "^5.7.0",
     "@ethersproject/web": "^5.7.1",
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
-    "@openzeppelin/contracts": "^4.5.0",
+    "@openzeppelin/contracts": "^4.9.3",
     "@openzeppelin/test-helpers": "^0.5.16",
     "@swc/core": "^1.2.162",
     "@swc/jest": "^0.2.20",
