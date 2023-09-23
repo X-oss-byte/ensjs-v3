@@ -83,7 +83,7 @@
     "@ensdomains/dnssecoraclejs": "^0.2.8",
     "cbor": "^8.1.0",
     "dns-packet": "^5.3.1",
-    "graphql": "^16.3.0",
+    "graphql": "^16.8.1",
     "graphql-request": "5.1.0",
     "pako": "^2.1.0",
     "traverse": "^0.6.6"
